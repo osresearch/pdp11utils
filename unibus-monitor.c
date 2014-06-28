@@ -30,61 +30,26 @@ static const uint8_t gpios3[] = {
 
 #define ARRAY_COUNT(a) ((sizeof(a) / sizeof(*a)))
 
-
-int
-gpio_config(
-	const unsigned gpio,
-	const unsigned pin,
-	const unsigned direction,
-	const unsigned initial_value
-)
+typedef struct
 {
-	const unsigned pin_num = gpio * 32 + pin;
-	const char * export_name = "/sys/class/gpio/export";
-	FILE * const export = fopen(export_name, "w");
-	if (!export)
-		die("%s: Unable to open? %s\n",
-			export_name,
-			strerror(errno)
-		);
+	gpio_t *	gpio;
+	uint32_t	addr:18;
+	uint32_t	data:16;
+	uint8_t		code:2;
+	uint8_t		aclo:1;
+	uint8_t		init:1;
+	uint8_t		parity:2;
+	uint8_t		bus_busy:1;
+	uint8_t		intr:1;
+	uint8_t		slave_ack:1;
+	uint8_t		slave_sync:1;
+	uint8_t		master_sync:1;
+	uint8_t		npr:1;
+	uint8_t		npg:1;
+	uint8_t		bus_req:4;
+	uint8_t		bus_grant:4;
+} unibus_t;
 
-	fprintf(export, "%d\n", pin_num);
-	fclose(export);
-
-	char value_name[64];
-	snprintf(value_name, sizeof(value_name),
-		"/sys/class/gpio/gpio%u/value",
-		pin_num
-	);
-
-	FILE * const value = fopen(value_name, "w");
-	if (!value)
-		die("%s: Unable to open? %s\n",
-			value_name,
-			strerror(errno)
-		);
-
-	fprintf(value, "%d\n", initial_value);
-	fclose(value);
-
-	char dir_name[64];
-	snprintf(dir_name, sizeof(dir_name),
-		"/sys/class/gpio/gpio%u/direction",
-		pin_num
-	);
-
-	FILE * const dir = fopen(dir_name, "w");
-	if (!dir)
-		die("%s: Unable to open? %s\n",
-			dir_name,
-			strerror(errno)
-		);
-
-	fprintf(dir, "%s\n", direction ? "out" : "in");
-	fclose(dir);
-
-	return 0;
-}
 
 
 /*
@@ -94,36 +59,31 @@ gpio_config(
  * all the output pins will be correctly configured as outputs.
  */
 static void
-unibus_gpio_init(void)
+unibus_gpio_init(
+	unibus_t * const u
+)
 {
 	for (unsigned i = 0 ; i < ARRAY_COUNT(gpios0) ; i++)
-		gpio_config(0, gpios0[i], 1, 0);
+		gpio_config(u->gpio, 0, gpios0[i], 0, 1, 0);
 	for (unsigned i = 0 ; i < ARRAY_COUNT(gpios1) ; i++)
-		gpio_config(1, gpios1[i], 1, 0);
+		gpio_config(u->gpio, 1, gpios1[i], 0, 1, 0);
 	for (unsigned i = 0 ; i < ARRAY_COUNT(gpios2) ; i++)
-		gpio_config(2, gpios2[i], 1, 0);
+		gpio_config(u->gpio, 2, gpios2[i], 0, 1, 0);
 	for (unsigned i = 0 ; i < ARRAY_COUNT(gpios3) ; i++)
-		gpio_config(3, gpios3[i], 1, 0);
+		gpio_config(u->gpio, 3, gpios3[i], 0, 1, 0);
 }
 
 
-typedef struct
+
+unibus_t *
+unibus_init(void)
 {
-	uint32_t	addr:18;
-	uint32_t	data:16;
-	uint8_t		c:2;
-	uint8_t		dcl0:1;
-	uint8_t		init:1;
-	uint8_t		pa:1;
-	uint8_t		pb:1;
-	uint8_t		bbsy:1;
-	uint8_t		intr:1;
-	uint8_t		ssyn:1;
-	uint8_t		npr:1;
-	uint8_t		npg:1;
-	uint8_t		br:4;
-	uint8_t		bg:4;
-} unibus_t;
+	unibus_t * const u = calloc(1, sizeof(*u));
+	u->gpio = gpio_init();
+	unibus_gpio_init(u);
+
+	return u;
+}
 
 
 int
@@ -131,13 +91,12 @@ unibus_read(
 	unibus_t * const u
 )
 {
-	const uint32_t g0 = gpio_read(0);
-	const uint32_t g1 = gpio_read(1);
-	const uint32_t g2 = gpio_read(2);
-	const uint32_t g3 = gpio_read(3);
+	const uint32_t g0 = gpio_read(u->gpio, 0);
+	const uint32_t g1 = gpio_read(u->gpio, 1);
+	const uint32_t g2 = gpio_read(u->gpio, 2);
+	const uint32_t g3 = gpio_read(u->gpio, 3);
 
 	// shuffle the bits in gpio0 to make the address
-asm("nop");
 	u->addr = 0
 		| bit_range( 0, g0,  2, 7)
 		| bit_range( 4, g0,  8, 12)
@@ -148,11 +107,24 @@ asm("nop");
 		| bit_range(16, g0, 30, 31)
 		;
 
-asm("nop");
-	u->data = 0
-		| bit_range( 0, g2,  1, 16)
-		;
+	u->data = bit_range( 0, g2,  1, 16);
+	u->code = bit_range(0, g1, 28, 29);
 
+	u->npg = bit(g1, 12);
+	u->npr = bit(g1, 13);
+	u->parity = bit_range(0, g1, 14, 15);
+	u->slave_ack = bit(g1, 16);
+	u->bus_busy = bit(g1, 17);
+
+	u->intr = bit(g3, 19);
+	u->master_sync = bit(g1, 18);
+	u->slave_sync = bit(g3, 21);
+
+	u->init = bit(g0, 11);
+	u->aclo = bit(g1, 19);
+
+	u->bus_grant = bit_range(0, g3, 14, 17);
+	u->bus_req = bit_range(0, g2, 22, 25);
 }
 
 
@@ -162,5 +134,16 @@ main(
 	char ** argv
 )
 {
-	
+	unibus_t * const u = unibus_init();
+	if (!u)
+		die("Unable to initialize unibus\n");
+
+	while (1)
+	{
+		unibus_read(u);
+		printf("%08x %08x\n", u->addr, u->data);
+		sleep(1);
+	}
+
+	return 0;
 }

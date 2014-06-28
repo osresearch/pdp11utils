@@ -43,6 +43,17 @@ bit_range(
 {
 	return bitshift(word & bitmask(from_lo, from_hi), to_bit - from_lo);
 }
+
+
+static inline uint32_t
+bit(
+	const uint32_t word,
+	const unsigned bit_num
+)
+{
+	return (word >> bit_num) & 1;
+}
+
 #else
 
 #define bitshift(word, delta) \
