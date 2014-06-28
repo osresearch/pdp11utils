@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include "util.h"
+#include "bitshuffle.h"
 
 
 /** GPIO pins used by the Unibus port.
@@ -130,53 +131,26 @@ unibus_read(
 	unibus_t * const u
 )
 {
-	uint32_t g0 = gpio_read(0);
-	uint32_t g1 = gpio_read(1);
-	uint32_t g2 = gpio_read(2);
-	uint32_t g3 = gpio_read(3);
-
-#define BIT(output_bit, input_word, input_bit) \
-		((((input_word) >> (input_bit)) & 1) << (output_bit))
+	const uint32_t g0 = gpio_read(0);
+	const uint32_t g1 = gpio_read(1);
+	const uint32_t g2 = gpio_read(2);
+	const uint32_t g3 = gpio_read(3);
 
 	// shuffle the bits in gpio0 to make the address
+asm("nop");
 	u->addr = 0
-		| BIT( 0, g0,  2)
-		| BIT( 1, g0,  3)
-		| BIT( 2, g0,  4)
-		| BIT( 3, g0,  7)
-		| BIT( 4, g0,  8)
-		| BIT( 5, g0,  9)
-		| BIT( 6, g0, 10)
-		| BIT( 7, g0, 11)
-		| BIT( 8, g0, 12)
-		| BIT( 9, g0, 14)
-		| BIT(10, g0, 15)
-		| BIT(11, g0, 20)
-		| BIT(12, g0, 22)
-		| BIT(13, g0, 23)
-		| BIT(14, g0, 26)
-		| BIT(15, g0, 27)
-		| BIT(16, g0, 30)
-		| BIT(17, g0, 31)
+		| bit_range( 0, g0,  2, 7)
+		| bit_range( 4, g0,  8, 12)
+		| bit_range( 9, g0, 14, 15)
+		| bit_range(11, g0, 20, 20)
+		| bit_range(12, g0, 22, 23)
+		| bit_range(14, g0, 26, 27)
+		| bit_range(16, g0, 30, 31)
 		;
 
+asm("nop");
 	u->data = 0
-		| BIT( 0, g2,  1)
-		| BIT( 1, g2,  2)
-		| BIT( 2, g2,  3)
-		| BIT( 3, g2,  4)
-		| BIT( 4, g2,  5)
-		| BIT( 5, g2,  6)
-		| BIT( 6, g2,  7)
-		| BIT( 7, g2,  8)
-		| BIT( 8, g2,  9)
-		| BIT( 9, g2, 10)
-		| BIT(10, g2, 11)
-		| BIT(11, g2, 12)
-		| BIT(12, g2, 13)
-		| BIT(13, g2, 14)
-		| BIT(14, g2, 15)
-		| BIT(15, g2, 16)
+		| bit_range( 0, g2,  1, 16)
 		;
 
 }
