@@ -46,3 +46,4 @@ gpio_read(
 	return *(volatile uint32_t*)(gpio->gpio[which] + GPIO_IN);
 }
 
+#endif

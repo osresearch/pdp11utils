@@ -3,6 +3,7 @@
  */
 #include <stdio.h>
 #include <unistd.h>
+#include "gpio.h"
 #include "util.h"
 #include "bitshuffle.h"
 
@@ -86,7 +87,7 @@ unibus_init(void)
 }
 
 
-int
+void
 unibus_read(
 	unibus_t * const u
 )
@@ -134,6 +135,9 @@ main(
 	char ** argv
 )
 {
+	(void) argc;
+	(void) argv;
+
 	unibus_t * const u = unibus_init();
 	if (!u)
 		die("Unable to initialize unibus\n");

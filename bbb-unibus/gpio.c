@@ -7,7 +7,10 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/fcntl.h>
 #include "gpio.h"
 #include "util.h"
 
@@ -62,7 +65,7 @@ gpio_init(void)
 fail:
 	if (fd >= 0)
 		close(fd);
-	free(gpios);
+	free(gpio);
 	return NULL;
 }
 
