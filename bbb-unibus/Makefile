@@ -1,4 +1,4 @@
-CROSS=arm-linux-gnueabi-
+#CROSS=arm-linux-gnueabi-
 CC=$(CROSS)gcc
 
 CFLAGS	= \

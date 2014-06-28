@@ -21,7 +21,20 @@ static const uintptr_t gpio_base[GPIO_COUNT] = {
 	0x481AE000,
 };
 
-#define GPIO_SIZE  0x00000FFF
+static const uintptr_t pinmux_base = 0x44e10000;
+
+#define GPIO_SIZE  0xFFF
+#define PINMUX_SIZE 0x1FFF
+
+volatile uint32_t *
+gpio_pin(
+	gpio_t * const gpio,
+	unsigned pin
+)
+{
+	return (volatile uint32_t*)(gpio->pinmux + 0x800 + 4*pin);
+}
+
 
 gpio_t *
 gpio_init(void)
@@ -38,6 +51,32 @@ gpio_init(void)
 		perror("/dev/mem");
 		goto fail;
 	}
+
+	gpio->pinmux = mmap(
+	    0,
+	    PINMUX_SIZE,
+	    PROT_READ | PROT_WRITE,
+	    MAP_SHARED,
+	    fd,
+	    pinmux_base
+	);
+
+	if (gpio->pinmux == MAP_FAILED) {
+		perror("mmap pinmux");
+		goto fail;
+	}
+
+	/*
+	for (int i = 0 ; i < 4*32 ; i++)
+	{
+		printf("%3d %d.%2d: %08x\n",
+			i,
+			i / 32,
+			i % 32,
+			*gpio_pin(gpio, i)
+		);
+	}
+	*/
 
 	for (int i = 0 ; i < GPIO_COUNT ; i++)
 	{
@@ -72,19 +111,20 @@ fail:
 
 int
 gpio_config(
-	gpio_t * const gpio_unused,
-	const unsigned gpio,
-	const unsigned pin,
+	gpio_t * const gpio,
+	const unsigned bank_num,
+	const unsigned bank_pin,
 	const unsigned direction,
 	const unsigned pullup,
 	const unsigned initial_value
 )
 {
 	// this could be re-written to use the gpio interface
-	(void) gpio_unused;
 	(void) pullup; // FIX ME
 
-	const unsigned pin_num = gpio * 32 + pin;
+	const unsigned pin_num = bank_num * 32 + bank_pin;
+	volatile uint32_t * const pinptr = gpio_pin(gpio, pin_num);
+	printf("%08"PRIxPTR" %3d: %2d %2d %08x\n", ((uintptr_t) pinptr - (uintptr_t) gpio->pinmux) + pinmux_base, pin_num, bank_num, bank_pin, *pinptr);
 	const char * export_name = "/sys/class/gpio/export";
 	FILE * const export = fopen(export_name, "w");
 	if (!export)

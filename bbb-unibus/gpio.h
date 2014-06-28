@@ -16,6 +16,7 @@
 
 typedef struct
 {
+	volatile uint8_t * pinmux;
 	volatile uint8_t * gpio[GPIO_COUNT];
 } gpio_t;
 
