@@ -18,3 +18,10 @@ clean:
 	$(RM) *.o
 
 -include .*.d
+
+firmware: firmware-install
+	echo CAPE-BONE-UNIBUS > /sys/devices/bone_capemgr.8/slots
+
+firmware-install: /lib/firmware/CAPE-BONE-UNIBUS-00A0.dtbo
+/lib/firmware/CAPE-BONE-UNIBUS-00A0.dtbo: cape-bone-unibus.dts
+	dtc -O dtb -o $@ -b 0 -@ $<
