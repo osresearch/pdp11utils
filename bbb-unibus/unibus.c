@@ -3,6 +3,7 @@
  */
 #include <stdio.h>
 #include <unistd.h>
+#include "unibus.h"
 #include "gpio.h"
 #include "util.h"
 #include "bitshuffle.h"
@@ -30,27 +31,6 @@ static const uint8_t gpios3[] = {
 };
 
 #define ARRAY_COUNT(a) ((sizeof(a) / sizeof(*a)))
-
-typedef struct
-{
-	gpio_t *	gpio;
-	uint32_t	addr:18;
-	uint32_t	data:16;
-	uint8_t		code:2;
-	uint8_t		aclo:1;
-	uint8_t		init:1;
-	uint8_t		parity:2;
-	uint8_t		bus_busy:1;
-	uint8_t		intr:1;
-	uint8_t		slave_ack:1;
-	uint8_t		slave_sync:1;
-	uint8_t		master_sync:1;
-	uint8_t		npr:1;
-	uint8_t		npg:1;
-	uint8_t		bus_req:4;
-	uint8_t		bus_grant:4;
-} unibus_t;
-
 
 
 /*
@@ -86,7 +66,9 @@ unibus_init(void)
 	for(int i = 0 ; i < 4 ; i++)
 		printf("%08x\n", u->gpio->gpio[i][GPIO_OE]);
 
+	// bring up the GPIO in slave mode
 	unibus_gpio_init(u);
+	unibus_master(u, 0);
 
 	return u;
 }
@@ -133,6 +115,68 @@ unibus_read(
 	u->bus_req = bit_range(0, g2, 22, 25);
 }
 
+
+// Address bits mapped in GPIO0
+const uint32_t g0_addr_mask = 0
+	| bitmask(2, 5)
+	| bitmask(7, 11)
+	| bitmask(14, 15)
+	| bitmask(20, 20)
+	| bitmask(22, 23)
+	| bitmask(26, 27)
+	| bitmask(30, 31)
+	;
+
+const uint32_t g1_data_mask = 0
+	| bitmask(1, 16)
+	;
+
+
+void
+unibus_master(
+	unibus_t * const u,
+	int take_master
+)
+{
+	if (take_master)
+	{
+		// force all the output direction bits hi
+		u->gpio->gpio[0][GPIO_OE] |= g0_addr_mask;
+		u->gpio->gpio[1][GPIO_OE] |= g1_data_mask;
+	} else {
+		// force all the output direction bits low
+		u->gpio->gpio[0][GPIO_OE] &= ~g0_addr_mask;
+		u->gpio->gpio[1][GPIO_OE] &= ~g1_data_mask;
+	}
+}
+
+
+void
+unibus_write_addr(
+	unibus_t * const u,
+	const uint32_t addr
+)
+{
+	// unpack all the bits
+	uint32_t g0_bits = 0
+		| bit_range( 2, addr,  0,  3)
+		| bit_range( 7, addr,  4,  8)
+		| bit_range(14, addr,  9, 10)
+		| bit_range(20, addr, 11, 11)
+		| bit_range(22, addr, 12, 13)
+		| bit_range(26, addr, 14, 15)
+		| bit_range(30, addr, 16, 17)
+		;
+
+	volatile uint32_t * const gpio0 = u->gpio->gpio[0];
+	volatile uint32_t * const out_ptr = &gpio0[GPIO_OUT];
+	*out_ptr = (*out_ptr & ~g0_addr_mask) | g0_bits;
+	
+	/*
+	// force all the output bits low
+	gpio0[GPIO_OE] &= ~g0_addr_mask;
+	*/
+}
 
 void
 unibus_print(

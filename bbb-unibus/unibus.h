@@ -39,6 +39,20 @@ unibus_read(
 
 
 extern void
+unibus_master(
+	unibus_t * const u,
+	int take_master
+);
+
+
+extern void
+unibus_write_addr(
+	unibus_t * const u,
+	const uint32_t addr
+);
+
+
+extern void
 unibus_print(
 	const unibus_t * const u
 );
