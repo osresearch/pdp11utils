@@ -2,6 +2,7 @@
 CC=$(CROSS)gcc
 
 CFLAGS	= \
+	-g \
 	-std=c99 \
 	-O3 \
 	-W \
