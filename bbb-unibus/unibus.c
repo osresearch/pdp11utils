@@ -80,7 +80,12 @@ unibus_t *
 unibus_init(void)
 {
 	unibus_t * const u = calloc(1, sizeof(*u));
+
 	u->gpio = gpio_init();
+
+	for(int i = 0 ; i < 4 ; i++)
+		printf("%08x\n", u->gpio->gpio[i][GPIO_OE]);
+
 	unibus_gpio_init(u);
 
 	return u;
@@ -121,7 +126,7 @@ unibus_read(
 	u->master_sync = bit(g1, 18);
 	u->slave_sync = bit(g3, 21);
 
-	u->init = bit(g0, 11);
+	u->init = bit(g2, 17);
 	u->aclo = bit(g1, 19);
 
 	u->bus_grant = bit_range(0, g3, 14, 17);
