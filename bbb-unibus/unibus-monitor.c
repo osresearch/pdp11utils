@@ -127,8 +127,24 @@ unibus_read(
 	u->bus_grant = bit_range(0, g3, 14, 17);
 	u->bus_req = bit_range(0, g2, 22, 25);
 
-	printf("%08x %08x %08x %08x ", g0, g1, g2, g3);
-	printf("addr=%06o data=%06o\n", u->addr, u->data);
+	//printf("%08x %08x %08x %08x ", g0, g1, g2, g3);
+	printf("A=%06o D=%06o C%1x %s%1x/%1x NP%s%s P%1x%s%s%s%s%s%s\n",
+		u->addr,
+		u->data,
+		u->code,
+		u->bus_busy ? "B" : "b",
+		u->bus_req,
+		u->bus_grant,
+		u->npr ? "R" : "r",
+		u->npg ? "G" : "g",
+		u->parity,
+		u->aclo ? " ACLO" : "",
+		u->init ? " INIT" : "",
+		u->intr ? " INTR" : "",
+		u->slave_ack ? " SACK": "",
+		u->slave_sync ? " SSYN": "",
+		u->master_sync ? " MSYN": ""
+	);
 }
 
 
