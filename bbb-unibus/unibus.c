@@ -126,7 +126,14 @@ unibus_read(
 
 	u->bus_grant = bit_range(0, g3, 14, 17);
 	u->bus_req = bit_range(0, g2, 22, 25);
+}
 
+
+void
+unibus_print(
+	const unibus_t * const u
+)
+{
 	//printf("%08x %08x %08x %08x ", g0, g1, g2, g3);
 	printf("A=%06o D=%06o C%1x %s%1x/%1x NP%s%s P%1x%s%s%s%s%s%s\n",
 		u->addr,
@@ -145,27 +152,4 @@ unibus_read(
 		u->slave_sync ? " SSYN": "",
 		u->master_sync ? " MSYN": ""
 	);
-}
-
-
-int
-main(
-	int argc,
-	char ** argv
-)
-{
-	(void) argc;
-	(void) argv;
-
-	unibus_t * const u = unibus_init();
-	if (!u)
-		die("Unable to initialize unibus\n");
-
-	while (1)
-	{
-		unibus_read(u);
-		sleep(1);
-	}
-
-	return 0;
 }
