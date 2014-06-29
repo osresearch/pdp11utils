@@ -17,7 +17,7 @@ bitshift(
 		return word << delta;
 	else
 	if (delta < 0)
-		return word >> delta;
+		return word >> -delta;
 	else
 		return word;
 }
