@@ -5,7 +5,7 @@
  */
 #include <stdint.h>
 
-#if 1
+#if 0
 
 static inline uint32_t
 bitshift(
@@ -56,14 +56,17 @@ bit(
 
 #else
 
+#define bit(word, bit_num) \
+	(((word) >> (bit_num)) & 1)
+
 #define bitshift(word, delta) \
-	((delta) > 0 ? ((word) << (delta)) : ((word) >> (delta)))
+	((delta) > 0 ? ((word) << (delta)) : ((word) >> -(delta)))
 
 #define bitmask(lo, hi) \
 	(((1 << ((hi) - (lo) + 1)) - 1) << (lo))
 
 #define bit_range(to_bit, word, from_lo, from_hi) \
-	bitshift((word) & bitmask(from_lo, from_hi), (to_bit) - (from_lo));
+	bitshift((word) & bitmask(from_lo, from_hi), (to_bit) - (from_lo))
 
 #endif
 
