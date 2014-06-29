@@ -197,12 +197,15 @@ gpio_config(
 	const unsigned pin_num = bank_num * 32 + bank_pin;
 	volatile uint32_t * const pinptr = gpio_pin(gpio, pin_num);
 
-	printf("%08"PRIxPTR" %3d: %2d %2d %08x\n",
+	printf("%08"PRIxPTR" %3d: %2d %2d %08x dir=%d pull=%d val=%d\n",
 		((uintptr_t) pinptr - (uintptr_t) gpio->pinmux) + pinmux_base,
 		pin_num,
 		bank_num,
 		bank_pin,
-		*pinptr
+		*pinptr,
+		direction,
+		pullup,
+		initial_value
 	);
 
 	const char * export_name = "/sys/class/gpio/export";
@@ -216,21 +219,24 @@ gpio_config(
 	fprintf(export, "%d\n", pin_num);
 	fclose(export);
 
-	char value_name[64];
-	snprintf(value_name, sizeof(value_name),
-		"/sys/class/gpio/gpio%u/value",
-		pin_num
-	);
-
-	FILE * const value = fopen(value_name, "w");
-	if (!value)
-		die("%s: Unable to open? %s\n",
-			value_name,
-			strerror(errno)
+	if (direction)
+	{
+		char value_name[64];
+		snprintf(value_name, sizeof(value_name),
+			"/sys/class/gpio/gpio%u/value",
+			pin_num
 		);
 
-	fprintf(value, "%d\n", initial_value);
-	fclose(value);
+		FILE * const value = fopen(value_name, "w");
+		if (!value)
+			die("%s: Unable to open? %s\n",
+				value_name,
+				strerror(errno)
+			);
+
+		fprintf(value, "%d\n", initial_value);
+		fclose(value);
+	}
 
 	char dir_name[64];
 	snprintf(dir_name, sizeof(dir_name),
@@ -251,9 +257,9 @@ gpio_config(
 	uint32_t pin_value = *pinptr;
 	if (pullup)
 	{
-		*pinptr = (pin_value & ~0x018) | 0x10;
+		*pinptr = (pin_value & ~0x18) | 0x10;
 	} else {
-		*pinptr = (pin_value & ~0x018) | 0x08;
+		*pinptr = (pin_value & ~0x18) | 0x08;
 	}
 
 	printf("%08"PRIxPTR" %3d: %2d %2d %08x\n",

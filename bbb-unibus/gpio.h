@@ -17,7 +17,7 @@
 typedef struct
 {
 	volatile uint8_t * pinmux;
-	volatile uint8_t * gpio[GPIO_COUNT];
+	volatile uint32_t * gpio[GPIO_COUNT];
 } gpio_t;
 
 
@@ -44,7 +44,7 @@ gpio_read(
 	if (which >= GPIO_COUNT)
 		return 0;
 
-	return *(volatile uint32_t*)(gpio->gpio[which] + GPIO_IN);
+	return gpio->gpio[which][GPIO_IN];
 }
 
 #endif
