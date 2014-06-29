@@ -197,6 +197,7 @@ gpio_config(
 	const unsigned pin_num = bank_num * 32 + bank_pin;
 	volatile uint32_t * const pinptr = gpio_pin(gpio, pin_num);
 
+	if (0)
 	printf("%08"PRIxPTR" %3d: %2d %2d %08x dir=%d pull=%d val=%d\n",
 		((uintptr_t) pinptr - (uintptr_t) gpio->pinmux) + pinmux_base,
 		pin_num,
@@ -262,6 +263,7 @@ gpio_config(
 		*pinptr = (pin_value & ~0x18) | 0x08;
 	}
 
+	if (0)
 	printf("%08"PRIxPTR" %3d: %2d %2d %08x\n",
 		((uintptr_t) pinptr - (uintptr_t) gpio->pinmux) + pinmux_base,
 		pin_num,
