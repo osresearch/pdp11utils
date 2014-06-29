@@ -99,8 +99,8 @@ unibus_read(
 
 	// shuffle the bits in gpio0 to make the address
 	u->addr = 0
-		| bit_range( 0, g0,  2, 7)
-		| bit_range( 4, g0,  8, 12)
+		| bit_range( 0, g0,  2, 5)
+		| bit_range( 4, g0,  7, 11)
 		| bit_range( 9, g0, 14, 15)
 		| bit_range(11, g0, 20, 20)
 		| bit_range(12, g0, 22, 23)
@@ -126,6 +126,9 @@ unibus_read(
 
 	u->bus_grant = bit_range(0, g3, 14, 17);
 	u->bus_req = bit_range(0, g2, 22, 25);
+
+	printf("%08x %08x %08x %08x ", g0, g1, g2, g3);
+	printf("addr=%06o data=%06o\n", u->addr, u->data);
 }
 
 
@@ -145,7 +148,6 @@ main(
 	while (1)
 	{
 		unibus_read(u);
-		printf("%08x %08x\n", u->addr, u->data);
 		sleep(1);
 	}
 
