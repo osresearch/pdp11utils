@@ -191,12 +191,20 @@ gpio_config(
 	const unsigned initial_value
 )
 {
-	// this could be re-written to use the gpio interface
-	(void) pullup; // FIX ME
-
+	// even though we have the pinmux device mapped,
+	// we will still use the /sys files to change the gpio status
+	// so that the Linux kernel knows how things are mapped.
 	const unsigned pin_num = bank_num * 32 + bank_pin;
 	volatile uint32_t * const pinptr = gpio_pin(gpio, pin_num);
-	printf("%08"PRIxPTR" %3d: %2d %2d %08x\n", ((uintptr_t) pinptr - (uintptr_t) gpio->pinmux) + pinmux_base, pin_num, bank_num, bank_pin, *pinptr);
+
+	printf("%08"PRIxPTR" %3d: %2d %2d %08x\n",
+		((uintptr_t) pinptr - (uintptr_t) gpio->pinmux) + pinmux_base,
+		pin_num,
+		bank_num,
+		bank_pin,
+		*pinptr
+	);
+
 	const char * export_name = "/sys/class/gpio/export";
 	FILE * const export = fopen(export_name, "w");
 	if (!export)
@@ -239,6 +247,22 @@ gpio_config(
 
 	fprintf(dir, "%s\n", direction ? "out" : "in");
 	fclose(dir);
+
+	uint32_t pin_value = *pinptr;
+	if (pullup)
+	{
+		*pinptr = (pin_value & ~0x018) | 0x10;
+	} else {
+		*pinptr = (pin_value & ~0x018) | 0x08;
+	}
+
+	printf("%08"PRIxPTR" %3d: %2d %2d %08x\n",
+		((uintptr_t) pinptr - (uintptr_t) gpio->pinmux) + pinmux_base,
+		pin_num,
+		bank_num,
+		bank_pin,
+		*pinptr
+	);
 
 	return 0;
 }
