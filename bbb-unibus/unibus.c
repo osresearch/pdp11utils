@@ -62,6 +62,8 @@ unibus_init(void)
 	unibus_t * const u = calloc(1, sizeof(*u));
 
 	u->gpio = gpio_init();
+	if (!u->gpio)
+		die("gpio mapping failed\n");
 
 	for(int i = 0 ; i < 4 ; i++)
 		printf("%08x\n", u->gpio->gpio[i][GPIO_OE]);
