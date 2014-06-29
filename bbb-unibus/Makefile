@@ -11,7 +11,7 @@ CFLAGS	= \
 	-Wp,-MT,$@ \
 	-I. \
 
-bbb-unibus: unibus-monitor.o util.o gpio.o
+bbb-unibus: bbb-unibus.o unibus.o util.o gpio.o
 	$(CC) -o $@ $^ -lm -lpthread
 
 clean:
