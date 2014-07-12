@@ -65,12 +65,12 @@ unibus_init(void)
 	if (!u->gpio)
 		die("gpio mapping failed\n");
 
-	for(int i = 0 ; i < 4 ; i++)
-		printf("%08x\n", u->gpio->gpio[i][GPIO_OE]);
-
 	// bring up the GPIO in slave mode
 	unibus_gpio_init(u);
 	unibus_master(u, 0);
+
+	for(int i = 0 ; i < 4 ; i++)
+		printf("%08x\n", u->gpio->gpio[i][GPIO_OE]);
 
 	return u;
 }
@@ -147,8 +147,12 @@ unibus_master(
 		u->gpio->gpio[1][GPIO_OE] |= g1_data_mask;
 	} else {
 		// force all the output direction bits low
+		// and enable the pullups
 		u->gpio->gpio[0][GPIO_OE] &= ~g0_addr_mask;
+		u->gpio->gpio[0][GPIO_OUT] |= g0_addr_mask;
+
 		u->gpio->gpio[1][GPIO_OE] &= ~g1_data_mask;
+		u->gpio->gpio[1][GPIO_OUT] |= g1_data_mask;
 	}
 }
 

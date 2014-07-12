@@ -25,13 +25,17 @@ main(
 	if (!u)
 		die("Unable to initialize unibus\n");
 
+#if 0
 	// try writing a zero to the address lines
 	uint32_t addr = 0x12345;
 	(void) addr;
 	unibus_write_addr(u, 0xffffffff);
+#endif
+	unibus_master(u, 0);
 
 	while (1)
 	{
+#if 0
 		unibus_master(u, 1);
 		for (int i = 0 ; i < 1000 ; i++)
 		{
@@ -39,6 +43,8 @@ main(
 		}
 		unibus_master(u, 0);
 		usleep(10000);
+#endif
+
 		unibus_read(u);
 		unibus_print(u);
 		usleep(10000);
